@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Resources for delivery of the simple sinatra app
+
+Mappings:
+  StackTags:
+    Standard:
+      ApplicationName: sinatra
+      AutomationTool: CloudFormation
+  IpRanges:
+    Standard:
+      AppAccess: 0.0.0.0/0
+      AdminAccess: 49.177.107.199/32
+
+Parameters:
+  VpcID:
+    Type: String
+  SubnetID:
+    Type: String
+  AMIParam:
+    Type: AWS::EC2::Image::Id
+  WebInstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues: ["t2.small", "t2.micro", "t2.nano" ]
+    ConstraintDescription: "Must be a valid EC2 Instance Type"
+  KeyName:
+    Type: String
+
+Resources:
+  sinatraInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SecurityGroupIds:
+        - !Ref appSecurityGroup
+      ImageId:
+        Ref: AMIParam
+      SubnetId:
+        Ref: SubnetID
+      InstanceType: !Ref WebInstanceType
+      KeyName:
+        Ref: KeyName
+      UserData:
+        Fn::Base64:
+             !Sub |
+              #!/bin/sh
+              # deploy the sinatra app
+              cd /opt
+              git clone https://github.com/rea-cruitment/simple-sinatra-app.git
+              cd simple-sinatra-app
+              bundle install
+              # run the app from port 80 and bind to 0.0.0.0 instead of 127.0.0.1
+              sudo nohup bundle exec rackup -p 80 --host 0.0.0.0 >> log.txt 2>&1 &
+
+      Tags:
+      - Key: AutomationTool
+        Value: !FindInMap [StackTags, "Standard", AutomationTool]
+      - Key: ApplicationName
+        Value: !FindInMap [StackTags, "Standard", ApplicationName]
+
+  appSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow incoming on ports 80/22
+      VpcId:
+        Ref: VpcID
+      SecurityGroupIngress:
+      # Allow access to the app
+      - CidrIp: !FindInMap [IpRanges, "Standard", AppAccess]
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      # Allow admin ssh access to the server
+      - CidrIp: !FindInMap [IpRanges, "Standard", AdminAccess]
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      Tags:
+      - Key: AutomationTool
+        Value: !FindInMap [StackTags, "Standard", AutomationTool]
+      - Key: ApplicationName
+        Value: !FindInMap [StackTags, "Standard", ApplicationName]
+
+Outputs:
+  URL:
+    Value:
+      Fn::Join:
+      - ''
+      - - http://
+        - Fn::GetAtt:
+          - sinatraInstance
+          - PublicDnsName
+    Description: Newly created application URL

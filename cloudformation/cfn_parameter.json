@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "VpcID",
+    "ParameterValue": "vpc-5fd18f3b"
+  },
+  {
+    "ParameterKey": "SubnetID",
+    "ParameterValue": "subnet-da09eabd"
+  },
+  {
+    "ParameterKey": "AMIParam",
+    "ParameterValue": "ami-0b678369"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "victortest"
+  }
+]

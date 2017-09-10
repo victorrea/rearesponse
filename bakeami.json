@@ -1,0 +1,31 @@
+{
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "ssh_pty": true,
+      "region": "ap-southeast-2",
+      "source_ami": "ami-e2021d81",
+      "instance_type": "t2.micro",
+      "ssh_username": "ubuntu",
+      "ami_name": "sinatra-{{ timestamp }}",
+      "run_tags": {
+        "Name": "packer"
+      },
+      "tags": {
+        "Name": "simple-sinatra"
+      }
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sudo apt-get update -y",
+        "sudo apt-get upgrade -y",
+        "sudo apt-get install -y git curl ruby",
+        "sudo gem install bundle",
+        "sudo gem install rack"
+      ]
+    }
+  ]
+}
